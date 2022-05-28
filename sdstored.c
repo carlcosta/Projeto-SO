@@ -13,7 +13,6 @@
 #define SIZE 400
 
 int pidp;
-int parent_id;
 
 typedef struct config
 {
@@ -289,7 +288,7 @@ int main(int argc, char const *argv[])
                 }
 
                 kill(atoi(pid_buffer), SIGCHLD);
-                
+
                 /*
                 while (waitpid(pidp, NULL, 0))
                 {
