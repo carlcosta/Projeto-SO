@@ -7,9 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MAX 1024
 #define SIZE 400
+
+int pidp;
+int parent_id;
 
 typedef struct config
 {
@@ -46,6 +50,7 @@ int pop(char queue[SIZE][200], int *top, char data[SIZE])
 
 int main(int argc, char const *argv[])
 {
+
     while (1)
     {
         char *pid_buffer = malloc(sizeof(int) * MAX);
@@ -132,9 +137,7 @@ int main(int argc, char const *argv[])
                 }
             }
 
-            int pid = fork();
-
-            if (pid == 0)
+            if ((pidp = fork()) == 0)
             {
 
                 int fd_process = open("pipe_process", O_RDONLY);
@@ -285,19 +288,25 @@ int main(int argc, char const *argv[])
                     close(fd[queue_size - 1][0]);
                 }
 
-                for (int i = 2; i < size; i++)
+                kill(atoi(pid_buffer), SIGCHLD);
+                
+                /*
+                while (waitpid(pidp, NULL, 0))
                 {
-                    for (int j = 0; j < 7; j++)
+                    for (int i = 2; i < size; i++)
                     {
-                        if (strcmp(queue[i], config[j].func) == 0)
+                        for (int j = 0; j < 7; j++)
                         {
-                            config[j].current--;
+                            if (strcmp(queue[i], config[j].func) == 0)
+                            {
+                                config[j].current--;
+                            }
                         }
                     }
-                }
-            }
+                }*/
 
-            kill(atoi(pid_buffer), SIGCHLD);
+                exit(0);
+            }
         }
 
         if (strcmp(exec, "status") == 0)

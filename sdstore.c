@@ -53,7 +53,7 @@ void sigusr2(int signum)
 
 void sigchld(int signum)
 {
-    final = bytes_files(gargv[2],gargv[3]);
+    final = bytes_files(gargv[2], gargv[3]);
     write(1, final, strlen(final));
     exit(1);
 }
@@ -192,7 +192,6 @@ int main(int argc, char *argv[])
         close(pipe_status);
 
         exit(1);
-
     }
 
     while (1);
