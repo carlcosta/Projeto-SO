@@ -11,8 +11,9 @@
 
 #define MAX 1024
 #define SIZE 400
-
-int pidp;
+#define ALT 15
+int pidp[SIZE];
+int indexp = 0;
 
 typedef struct config
 {
@@ -165,7 +166,7 @@ int main(int argc, char const *argv[])
                 }
             }
 
-            if ((pidp = fork()) == 0)
+            if ((pidp[indexp] = fork()) == 0)
             {
 
                 int fd_process = open("tmp/pipe_process", O_RDONLY);
@@ -262,6 +263,7 @@ int main(int argc, char const *argv[])
 
                         if (queue[i])
                         {
+
                             char path_trans_aux[50];
                             strcpy(path_trans_aux, path_trans);
                             char *trans_name;
@@ -271,6 +273,7 @@ int main(int argc, char const *argv[])
 
                             if (pid == 0)
                             {
+
                                 close(fd[j][0]);
                                 dup2(fd[j - 1][0], STDIN_FILENO);
                                 close(fd[j - 1][0]);
@@ -278,10 +281,12 @@ int main(int argc, char const *argv[])
                                 close(fd[j][1]);
                                 execl(trans_name, queue[i], NULL);
                                 perror("error in the middle of the transformation");
-                                exit(0);
+                                _exit(EXIT_FAILURE);
                             }
-                            int status;
-                            wait(&status);
+
+                            // int status;
+                            // wait(&status);
+                            // múltiplas transformações com file de tamanho menor tem q ter wait se for com tamanho mais elevado retira-se o wait(&status)
                             close(fd[j - 1][0]);
                             close(fd[j][1]);
                         }
@@ -318,23 +323,9 @@ int main(int argc, char const *argv[])
 
                 kill(atoi(pid_buffer), SIGCHLD);
 
-                /*
-                while (waitpid(pidp, NULL, 0))
-                {
-                    for (int i = 2; i < size; i++)
-                    {
-                        for (int j = 0; j < 7; j++)
-                        {
-                            if (strcmp(queue[i], config[j].func) == 0)
-                            {
-                                config[j].current--;
-                            }
-                        }
-                    }
-                }*/
-
                 exit(0);
             }
+            indexp++;
         }
 
         if (strcmp(exec, "status") == 0)
@@ -354,6 +345,24 @@ int main(int argc, char const *argv[])
             }
 
             close(pipe_status);
+
+            for (int i = 0; i <= indexp; i++)
+            {
+                while (waitpid(pidp[i], NULL, 0) > 0)
+                {
+                    for (int i = 2; i < SIZE; i++)
+                    {
+                        for (int j = 0; j < 7; j++)
+                        {
+                            if (strcmp(queue[i], config[j].func) == 0)
+                            {
+
+                                config[j].current--;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

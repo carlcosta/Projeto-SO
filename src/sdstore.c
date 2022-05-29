@@ -11,32 +11,108 @@
 
 #define MAX 1024
 
+char isnum(char c)
+{
+    if (c >= '0' && c <= '9')
+        return 1;
+
+    return 0;
+}
+
 char **gargv;
 char *final;
 int pid;
 
 char *bytes_files(char *file1, char *file2)
 {
-    int file_bytes = 0;
-    int save_bytes = 0;
+    char *buff1 = malloc(sizeof(int) * 100);
+    char *buff2 = malloc(sizeof(int) * 100);
     char *prog = malloc(sizeof(int) * 100);
-    int file = open(file1, O_RDONLY);
-    char c;
-    while (read(file, &c, 1) == 1)
+
+    int fd1[2];
+    if (pipe(fd1) == -1)
     {
-        file_bytes++;
+        perror("error in pipe 1\n");
+        exit(1);
     }
 
-    close(file);
-    int save = open(file2, O_RDONLY);
-    char s;
-    while (read(save, &s, 1) == 1)
+    int pid1 = fork();
+    if (pid1 == -1)
     {
-        save_bytes++;
+        perror("error in fork 1\n");
+        exit(1);
     }
-    close(save);
 
-    sprintf(prog, "Concluded (bytes-input: %d, bytes-output: %d)\n", file_bytes, save_bytes);
+    if (pid1 == 0)
+    {
+        close(fd1[0]);
+        dup2(fd1[1], STDOUT_FILENO);
+        close(fd1[1]);
+        execlp("wc", "wc", "-c", file1, NULL);
+        perror("exec 1");
+        exit(1);
+    }
+    waitpid(pid1, NULL, 0);
+    close(fd1[1]);
+
+    int fd2[2];
+    if (pipe(fd2) == -1)
+    {
+        perror("error in pipe 2\n");
+        exit(1);
+    }
+
+    int pid2 = fork();
+    if (pid2 == -1)
+    {
+        perror("error in fork 2\n");
+        exit(1);
+    }
+    
+    if (pid2 == 0)
+    {
+        close(fd2[0]);
+        dup2(fd2[1], STDOUT_FILENO);
+        close(fd2[1]);
+        execlp("wc", "wc", "-c", file2, NULL);
+        perror("exec 1");
+        exit(1);
+    }
+    waitpid(pid2, NULL, 0);
+    close(fd2[1]);
+
+    int next_pos = 0;
+
+    while (next_pos < 100 && read(fd1[0], buff1 + next_pos, 1) > 0)
+    {
+
+        if (isnum(buff1[next_pos]))
+        {
+            next_pos++;
+        }
+        else
+        {
+            next_pos = 0;
+            break;
+        }
+    }
+    while (next_pos < 100 && read(fd2[0], buff2 + next_pos, 1) > 0)
+    {
+
+        if (isnum(buff2[next_pos]))
+        {
+            next_pos++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    sprintf(prog, "Concluded (bytes-input: %s, bytes-output: %s)\n", buff1, buff2);
+    free(buff1);
+    free(buff2);
+
     return prog;
 }
 
